@@ -34,7 +34,7 @@ class Cd2Strm(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/honue/MoviePilot-Plugins/main/icons/clouddrive.png"
     # 插件版本
-    plugin_version = "0.0.5"
+    plugin_version = "0.0.6"
     # 插件作者
     plugin_author = "honue"
     # 作者主页
@@ -102,7 +102,8 @@ class Cd2Strm(_PluginBase):
         if self._scheduler.get_jobs():
             # 启动服务
             self._scheduler.print_jobs()
-            self._scheduler.start()
+            if not self._scheduler.running:  # 修：重复 init 会抛 Scheduler is already running
+                self._scheduler.start()
 
         # 更新配置
         self.update_config({
@@ -147,8 +148,7 @@ class Cd2Strm(_PluginBase):
                     meta: MetaBase = event.event_data.get("meta")
 
                     if media_info:
-                        is_exist = self._subscribe_oper.exists(tmdbid=media_info.tmdb_id, doubanid=media_info.douban_id,
-                                                               season=media_info.season)
+                        is_exist = self._mp_subscribe_exists(media_info)
                         if is_exist:
                             logger.info(f'识别为追更剧，{self._cron}分钟后执行上传任务')
                             try:
@@ -184,7 +184,41 @@ class Cd2Strm(_PluginBase):
                                         name="cd2上传任务")
                 logger.info(f"已注册延迟上传任务，延迟={self._cron}分钟")
 
-            self._scheduler.start()
+            if not self._scheduler.running:  # 修：事件重入会抛 Scheduler is already running
+                self._scheduler.start()
+
+
+    def _mp_subscribe_exists(self, media_info) -> bool:
+        """是否已订阅（兼容 MP 新旧 SubscribeOper.exists 签名）。
+
+        新签名: exists(media_source, media_id, season=...)
+        旧签名: exists(tmdbid=..., doubanid=..., season=...)   # MP 3.0 之前
+        """
+        try:
+            from app.schemas.types import MediaSource  # 局部导入，旧版无此枚举时走 except
+
+            if getattr(media_info, "tmdb_id", None):
+                _src, _mid = MediaSource.TMDB, str(media_info.tmdb_id)
+            elif getattr(media_info, "douban_id", None):
+                _src, _mid = MediaSource.Douban, str(media_info.douban_id)
+            else:
+                return False
+            return bool(
+                self._subscribe_oper.exists(
+                    media_source=_src,
+                    media_id=_mid,
+                    season=getattr(media_info, "season", None),
+                )
+            )
+        except TypeError:
+            # 老版本 MP：退回旧关键字
+            return bool(
+                self._subscribe_oper.exists(
+                    tmdbid=getattr(media_info, "tmdb_id", None),
+                    doubanid=getattr(media_info, "douban_id", None),
+                    season=getattr(media_info, "season", None),
+                )
+            )
 
     def upload_task(self, immediately_id: int = None):
         try:
