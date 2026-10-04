@@ -55,3 +55,9 @@ https://github.com/honue/MoviePilot-Plugins/
 ### 如果对你有所帮助⭐
 
 [![Stargazers over time](https://starchart.cc/honue/MoviePilot-Plugins.svg?background=%23FFFFFF&axis=%23333333&line=%2363beff)](https://starchart.cc/honue/MoviePilot-Plugins)
+
+## 本仓用途（INOWNESS 自用 fork）
+
+上游 honue/MoviePilot-Plugins 的 cd2strm 未适配 MoviePilot 3.x（ 签名变更、
+ 重入），本仓仅保留修复版 cd2strm，作为 MP 的插件来源之一使用。
+其余插件请用上游仓库，避免本仓遮蔽上游更新。
