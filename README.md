@@ -58,6 +58,11 @@ https://github.com/honue/MoviePilot-Plugins/
 
 ## 本仓用途（INOWNESS 自用 fork）
 
-上游 honue/MoviePilot-Plugins 的 cd2strm 未适配 MoviePilot 3.x（ 签名变更、
- 重入），本仓仅保留修复版 cd2strm，作为 MP 的插件来源之一使用。
+上游 honue/MoviePilot-Plugins 的 cd2strm 未适配 MoviePilot 3.x：
+
+- `SubscribeOper.exists` 在 MP 3.x 已改为 `exists(media_source, media_id, season=...)`；旧签名
+  `exists(tmdbid=..., doubanid=...)` 每次 TransferComplete 事件都抛 TypeError，追更剧判定整条走不通；
+- `self._scheduler.start()` 无保护，init_plugin/事件重入时抛 `Scheduler is already running`。
+
+本仓仅保留修复版 cd2strm（0.0.6），作为 MoviePilot 的插件来源之一安装使用。
 其余插件请用上游仓库，避免本仓遮蔽上游更新。
